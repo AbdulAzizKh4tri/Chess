@@ -873,10 +873,13 @@ function load() {
         .then((data) => {
             data.themes.forEach((theme) => {
                 let option = document.createElement("option");
+                option.id = `theme-${theme.name}`
                 option.value = theme.name;
                 option.innerHTML = theme.icon;
                 document.getElementById("theme").appendChild(option);
             });
+        }).then(() => {
+                document.getElementById(`theme-${THEME}`).selected = true
         })
         .catch((error) => console.error("Error loading themes:", error));
 
