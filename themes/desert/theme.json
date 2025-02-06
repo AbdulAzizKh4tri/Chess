@@ -1,5 +1,7 @@
 {
     "white_cell_color": "beige",
     "black_cell_color": "burlywood",
-    "background_image": "background.jpg"
+    "background_image": "background.jpg",   
+    "checkmate_image": "checkmate.png",
+    "stalemate_image": "stalemate.png"
 }

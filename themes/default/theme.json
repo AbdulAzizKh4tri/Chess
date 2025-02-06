@@ -1,5 +1,7 @@
 {
     "white_cell_color": "white",
     "black_cell_color": "grey",
-    "background_color":"darkgrey"
+    "background_color": "darkgrey",
+    "checkmate_image": "checkmate.png",
+    "stalemate_image": "stalemate.png"
 }

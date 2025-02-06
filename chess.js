@@ -14,14 +14,21 @@ let BLACK_CELL_IMAGE = null;
 let MOVABLE_COLOR = "lightgreen";
 let KILL_COLOR = "#F00";
 
+let CHECKMATE_IMAGE = null
+let STALEMATE_IMAGE = null
+
 const WHITE = "white";
 const BLACK = "black";
 
 let TURN_BOARD = false;
 let TURN_PIECES = false;
+let TURN_BLACK_PIECES = false;
+
 let PLAYER = WHITE;
 
 let TURN = WHITE;
+let STALEMATE = "stalemate"
+let CHECKMATE = "checkmate"
 
 //format of each element : [piece,prev_pos,next_pos,taken_piece,(special)]
 let MOVES = [];
@@ -246,7 +253,7 @@ class Game {
                     img.src =
                         `./themes/${THEME}/${curr.piece.color}/${curr.piece.img}.png`;
                     img.classList += " piece ";
-                    if(TURN_PIECES && TURN == BLACK){
+                    if((TURN_BLACK_PIECES && curr.piece.color == BLACK)|| (TURN_PIECES && TURN == BLACK)){
                         img.classList += " rotated "
                     }
                     document.getElementById(curr.piece.position).appendChild(img);
@@ -605,9 +612,27 @@ class Game {
 
         this.calculateDanger();
         let mate = this.checkForMate();
-        if (mate) {
+        
+        if (mate == CHECKMATE) {
+            let html_modal = document.getElementById("endModal")
+            document.getElementById("modal_heading").innerHTML = "Checkmate!"
+            document.getElementById("modal_winner").innerHTML = `${(TURN).toUpperCase()} WINS!`
+            document.getElementById("modal_image").src = CHECKMATE_IMAGE
+            let modal = new bootstrap.Modal(html_modal);
+            modal.show();
             console.log("CHECKMATE");
             console.log(TURN, "WINS!");
+        }
+
+        if (mate == STALEMATE) {
+            let html_modal = document.getElementById("endModal")
+            document.getElementById("modal_heading").innerHTML = "Stalemate"
+            document.getElementById("modal_winner").innerHTML = `Draw`
+            document.getElementById("modal_image").src = STALEMATE_IMAGE
+            let modal = new bootstrap.Modal(html_modal);
+            modal.show();
+            console.log("STALEMATE");
+            console.log("BOTH OF YOU SUCK!");
         }
 
         let curr_move = [piece, prev_pos, next_pos, taken_piece, special];
@@ -615,8 +640,11 @@ class Game {
 
         if (forward) {
             MOVES.push(curr_move);
+            TURN = otherColor(piece.color);
+        }else{
+            TURN = piece.color;
         }
-        TURN = otherColor(piece.color);
+        if(MOVES.length == 0) TURN = WHITE
         if (TURN_BOARD) {
             this.renderBoard();
         }
@@ -656,20 +684,33 @@ class Game {
 
     checkForMate() {
         let other = otherColor(TURN);
-        let mate = true;
+        let piece_count = 0
+        let enough_material = false
+        let in_check = false
+        let movable = false
+
+        let enemy_king = this.getKing(other)
+        let [king_col,king_row] = translateToNums(enemy_king.position)
+        if(this.board[king_row][king_col].in_danger) in_check = true
+
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 let piece = this.board[i][j].piece;
                 if (!piece) continue;
+                piece_count++
+                if(piece instanceof(Rook) || piece instanceof(Queen)) enough_material = true
                 if (piece.color == other) {
                     if (this.getPossibleMoves(piece).length > 0) {
-                        mate = false;
-                        return mate;
+                        movable = true;
                     }
                 }
             }
         }
-        return mate;
+
+        if(piece_count <= 3 && !enough_material) return STALEMATE
+        if(in_check && !movable) return CHECKMATE
+        if(!in_check && !movable) return STALEMATE
+        return false
     }
 
     calculateDanger() {
@@ -853,12 +894,26 @@ function setTheme() {
             MOVABLE_COLOR = data["movable_color"] ?? "lightgreen"
             KILL_COLOR = data["kill_color"] ?? "#F00"
 
+            checkmate_image = data["checkmate_image"] ?? null
+            stalemate_image = data["stalemate_image"] ?? null
+            if(checkmate_image)
+                CHECKMATE_IMAGE = `themes/${THEME}/${checkmate_image}`
+            if(stalemate_image) 
+                STALEMATE_IMAGE = `themes/${THEME}/${stalemate_image}`
+
             if (BACKGROUND_IMAGE) {
                 document.body.style.backgroundImage =
                     `url('themes/${THEME}/${BACKGROUND_IMAGE}')`;
             } else {
                 document.body.style.background = BACKGROUND_COLOR;
             }
+            
+            let mate_modal = document.getElementById("modal_content")
+            mate_modal.style.background = WHITE_CELL_COLOR ?? "white"
+
+            let mate_modal_close_btn = document.getElementById("close_modal_btn")
+            mate_modal_close_btn.style.background = BLACK_CELL_COLOR ?? "grey"
+
             document.getElementById("logo").style.color = LOGO_COLOR;
             game.setColors();
             game.resetColors();
@@ -934,6 +989,8 @@ function load() {
             }
             TURN_BOARD = document.getElementById("turn_board").checked
             TURN_PIECES = document.getElementById("turn_pieces").checked
+            TURN_BLACK_PIECES = document.getElementById("turn_black").checked
+            game.renderPieces()
 
         })
     }
