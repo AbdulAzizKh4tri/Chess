@@ -532,6 +532,7 @@ class Game {
         let prev_pos = piece.position;
         piece.position = next_pos;
         let special = null;
+        let old_piece = piece
 
         let prev = this.board[prev_row][prev_col];
         let next = this.board[next_row][next_col];
@@ -610,6 +611,7 @@ class Game {
         }
 
         let curr_move = [piece, prev_pos, next_pos, taken_piece, special];
+        if(special == "promotion") curr_move.push(old_piece)
 
         if (forward) {
             MOVES.push(curr_move);
@@ -761,13 +763,13 @@ class Game {
         }
 
         if (move[4] == "promotion") {
-            let pawn = new Pawn(
-                piece.color,
-                translateToChars(next_col, next_row),
-            );
+            let pawn = move[5]
             new_cell.piece = pawn;
             this.makeMove(pawn, prev_col, prev_row, false);
-            return;
+            new_cell.piece = taken_piece
+            this.renderPieces()
+            this.enableMovables()
+            return
         }
 
         if (move[4] == "castle_H") {
