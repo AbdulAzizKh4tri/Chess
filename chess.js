@@ -739,7 +739,6 @@ class Game {
         let new_cell = this.board[next_row][next_col];
         let old_cell = this.board[prev_row][prev_col];
 
-        REDO_STACK.push([piece, next_col, next_row]);
 
         let behind = (piece.color == WHITE) ? -1 : 1;
 
@@ -747,6 +746,7 @@ class Game {
             this.makeMove(piece, prev_col, prev_row, false);
             new_cell.piece = taken_piece;
             this.renderPieces();
+            REDO_STACK.push([piece, next_col, next_row]);
             return;
         }
         if (move[4] == "enpassant") {
@@ -759,6 +759,7 @@ class Game {
             let last_move = MOVES.pop();
             last_move[0] = pawn;
             MOVES.push(last_move);
+            REDO_STACK.push([piece, next_col, next_row]);
             return;
         }
 
@@ -769,9 +770,11 @@ class Game {
             new_cell.piece = taken_piece
             this.renderPieces()
             this.enableMovables()
+            REDO_STACK.push([pawn, next_col, next_row]);
             return
         }
 
+        REDO_STACK.push([piece, next_col, next_row]);
         if (move[4] == "castle_H") {
             let king = this.getKing(piece.color);
             king.position = translateToChars(4, prev_row);
