@@ -5,8 +5,8 @@ let BACKGROUND_IMAGE = null;
 
 let LOGO_COLOR = "black";
 
-let WHITE_CELL_COLOR = "white";
-let BLACK_CELL_COLOR = "grey";
+let LIGHT_COLOR = "white";
+let DARK_COLOR = "grey";
 
 let WHITE_CELL_IMAGE = null;
 let BLACK_CELL_IMAGE = null;
@@ -200,14 +200,14 @@ class Game {
                     if (WHITE_CELL_IMAGE) {
                         button.style.backgroundImage = WHITE_CELL_IMAGE;
                     } else {
-                        button.style.background = WHITE_CELL_COLOR;
+                        button.style.background = LIGHT_COLOR;
                     }
                 }
                 if (cell_color == BLACK) {
                     if (BLACK_CELL_IMAGE) {
                         button.style.backgroundImage = BLACK_CELL_IMAGE;
                     } else {
-                        button.style.background = BLACK_CELL_COLOR;
+                        button.style.background = DARK_COLOR;
                     }
                 }
 
@@ -229,14 +229,14 @@ class Game {
                     if (WHITE_CELL_IMAGE) {
                         button.style.backgroundImage = WHITE_CELL_IMAGE;
                     } else {
-                        button.style.background = WHITE_CELL_COLOR;
+                        button.style.background = LIGHT_COLOR;
                     }
                 }
                 if (cell_color == BLACK) {
                     if (BLACK_CELL_IMAGE) {
                         button.style.backgroundImage = BLACK_CELL_IMAGE;
                     } else {
-                        button.style.background = BLACK_CELL_COLOR;
+                        button.style.background = DARK_COLOR;
                     }
                 }
             }
@@ -882,8 +882,8 @@ function setTheme() {
     fetch(path)
         .then((response) => response.json())
         .then((data) => {
-            WHITE_CELL_COLOR = data["white_cell_color"] ?? "white";
-            BLACK_CELL_COLOR = data["black_cell_color"] ?? "grey";
+            LIGHT_COLOR = data["light_color"] ?? "white";
+            DARK_COLOR = data["dark_color"] ?? "grey";
             WHITE_CELL_IMAGE = data["white_cell_image"] ?? null;
             BLACK_CELL_IMAGE = data["black_cell_image"] ?? null;
             LOGO_COLOR = data["logo_color"] ?? "black";
@@ -909,10 +909,10 @@ function setTheme() {
             }
             
             let mate_modal = document.getElementById("modal_content")
-            mate_modal.style.background = WHITE_CELL_COLOR ?? "white"
+            mate_modal.style.background = LIGHT_COLOR ?? "white"
 
             let mate_modal_close_btn = document.getElementById("close_modal_btn")
-            mate_modal_close_btn.style.background = BLACK_CELL_COLOR ?? "grey"
+            mate_modal_close_btn.style.background = DARK_COLOR ?? "grey"
 
             document.getElementById("logo").style.color = LOGO_COLOR;
             game.setColors();
