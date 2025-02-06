@@ -182,10 +182,7 @@ class Game {
             };
         }
         for (let i = start; condition(i, end); i += incr) {
-            let row = document.createElement("tr");
             for (let j = jstart; jcondition(j, jend); j += jincr) {
-                let cell = document.createElement("td");
-                cell.classList += " m-0 p-0 ";
                 let button = document.createElement("button");
                 button.id = translateToChars(j - 1, i - 1);
 
@@ -206,13 +203,11 @@ class Game {
                     }
                 }
 
-                button.classList += " button cell";
+                button.classList += " m-0 p-0 button ";
                 button.disabled = true;
                 button.innerHTML = "";
-                cell.appendChild(button);
-                row.appendChild(cell);
+                board.appendChild(button);
             }
-            board.appendChild(row);
         }
     }
 
