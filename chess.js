@@ -616,7 +616,7 @@ class Game {
         if (forward) {
             MOVES.push(curr_move);
         }
-        TURN = otherColor(TURN);
+        TURN = otherColor(piece.color);
         if (TURN_BOARD) {
             this.renderBoard();
         }
@@ -778,6 +778,7 @@ class Game {
         if (move[4] == "castle_H") {
             let king = this.getKing(piece.color);
             king.position = translateToChars(4, prev_row);
+            king.has_moved = false
             this.board[prev_row][4].piece = king;
             this.board[prev_row][5].piece = null;
             this.board[prev_row][6].piece = null;
@@ -795,6 +796,7 @@ class Game {
 
         if (move[4] == "castle_A") {
             let king = this.getKing(piece.color);
+            king.has_moved = false
             king.position = translateToChars(4, prev_row);
             this.board[prev_row][4].piece = king;
             this.board[prev_row][3].piece = null;
