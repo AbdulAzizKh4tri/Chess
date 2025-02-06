@@ -837,7 +837,6 @@ function setTheme() {
     fetch(path)
         .then((response) => response.json())
         .then((data) => {
-            console.log(data);
             WHITE_CELL_COLOR = data["white_cell_color"] ?? "white";
             BLACK_CELL_COLOR = data["black_cell_color"] ?? "grey";
             WHITE_CELL_IMAGE = data["white_cell_image"] ?? null;
@@ -885,7 +884,7 @@ function load() {
         .catch((error) => console.error("Error loading themes:", error));
 
     if (!localStorage.getItem("THEME")) {
-        localStorage.setItem("THEME", document.getElementById("theme").value);
+        localStorage.setItem("THEME", "default");
     }
     setTheme();
     game.renderBoard();
