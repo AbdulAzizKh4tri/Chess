@@ -11,8 +11,8 @@ let BLACK_CELL_COLOR = "grey";
 let WHITE_CELL_IMAGE = null;
 let BLACK_CELL_IMAGE = null;
 
-const MOVABLE_COLOR = "lightgreen";
-const KILL_COLOR = "#F00";
+let MOVABLE_COLOR = "lightgreen";
+let KILL_COLOR = "#F00";
 
 const WHITE = "white";
 const BLACK = "black";
@@ -843,6 +843,9 @@ function setTheme() {
             BACKGROUND_COLOR = data["background_color"] ?? "white";
             BACKGROUND_IMAGE = data["background_image"] ?? null;
 
+            MOVABLE_COLOR = data["movable_color"] ?? "lightgreen"
+            KILL_COLOR = data["kill_color"] ?? "#F00"
+
             if (BACKGROUND_IMAGE) {
                 document.body.style.backgroundImage =
                     `url('themes/${THEME}/${BACKGROUND_IMAGE}')`;
@@ -908,16 +911,25 @@ function load() {
         localStorage.setItem("THEME", document.getElementById("theme").value);
         setTheme();
     };
-    let turn_board_check = document.getElementById("turn_board");
-    turn_board_check.onchange = () => {
-        TURN_BOARD = turn_board_check.checked;
-        TURN_PIECES = turn_pieces_check.checked;
-    };
-    let turn_pieces_check = document.getElementById("turn_pieces");
-    turn_pieces_check.onchange = () => {
-        TURN_BOARD = turn_board_check.checked;
-        TURN_PIECES = turn_pieces_check.checked;
-    };
+
+    for(let radio of document.getElementsByClassName('rotation')){
+        radio.addEventListener('click', function () {
+            if (this.checked) {
+                if (this.dataset.checked === "true") {
+                    this.checked = false;
+                    this.dataset.checked = "false";
+                } else {
+                    this.dataset.checked = "true";
+                    for(let other of document.getElementsByClassName('rotation')){
+                        if (other !== this) other.dataset.checked = "false";
+                    }
+                }
+            }
+            TURN_BOARD = document.getElementById("turn_board").checked
+            TURN_PIECES = document.getElementById("turn_pieces").checked
+
+        })
+    }
 }
 
 window.onload = load;
