@@ -44,3 +44,7 @@ body {
     grid-template-rows: repeat(8, 1fr);
     gap: 0;
 }
+
+.rotated {
+    transform: rotate(180deg);
+}

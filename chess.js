@@ -18,6 +18,7 @@ const WHITE = "white";
 const BLACK = "black";
 
 let TURN_BOARD = false;
+let TURN_PIECES = false;
 let PLAYER = WHITE;
 
 let TURN = WHITE;
@@ -245,9 +246,10 @@ class Game {
                     img.src =
                         `./themes/${THEME}/${curr.piece.color}/${curr.piece.img}.png`;
                     img.classList += " piece ";
-                    document.getElementById(curr.piece.position).appendChild(
-                        img,
-                    );
+                    if(TURN_PIECES && TURN == BLACK){
+                        img.classList += " rotated "
+                    }
+                    document.getElementById(curr.piece.position).appendChild(img);
                 }
             }
         }
@@ -903,9 +905,15 @@ function load() {
         localStorage.setItem("THEME", document.getElementById("theme").value);
         setTheme();
     };
-    let turn_check = document.getElementById("turn_board");
-    turn_check.onchange = () => {
-        TURN_BOARD = turn_check.checked;
+    let turn_board_check = document.getElementById("turn_board");
+    turn_board_check.onchange = () => {
+        TURN_BOARD = turn_board_check.checked;
+        TURN_PIECES = turn_pieces_check.checked;
+    };
+    let turn_pieces_check = document.getElementById("turn_pieces");
+    turn_pieces_check.onchange = () => {
+        TURN_BOARD = turn_board_check.checked;
+        TURN_PIECES = turn_pieces_check.checked;
     };
 }
 
