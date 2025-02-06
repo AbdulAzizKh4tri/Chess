@@ -1,0 +1,12 @@
+{
+  "themes": [
+    {
+      "name": "default",
+      "icon": "♟️"
+    },
+    {
+      "name":"desert",
+      "icon":"🏜️"
+    }
+  ]
+}

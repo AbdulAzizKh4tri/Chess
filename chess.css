@@ -1,0 +1,34 @@
+.button {
+    height: min(10vw, 10vh);
+    width: min(10vw, 10vh);
+    border-width: 1px;
+    border-color: darkgrey;
+}
+
+.piece {
+    height: min(8vw, 8vh);
+    width: min(8vw, 8vh);
+}
+
+.icon {
+    height: min(3vw, 3vh);
+    width: min(3vw, 3vh);
+}
+
+#logo {
+    font-family: "New Rocker", serif;
+    font-size: 8vh;
+    font-weight: bold;
+    font-style: normal;
+}
+
+body {
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+#board {
+    border-color: black;
+    border-width: 2px;
+}
