@@ -1,3 +1,4 @@
+//THEME related globals
 let THEME = "default";
 
 let BACKGROUND_COLOR = null;
@@ -17,6 +18,7 @@ let KILL_COLOR = "#F00";
 let CHECKMATE_IMAGE = null
 let STALEMATE_IMAGE = null
 
+//Game related globals
 const WHITE = "white";
 const BLACK = "black";
 
@@ -24,7 +26,7 @@ let TURN_BOARD = false;
 let TURN_PIECES = false;
 let TURN_BLACK_PIECES = false;
 
-let PLAYER = WHITE;
+let PLAYER = WHITE; //currently does nothing since no multiplayer... yet
 
 let TURN = WHITE;
 let STALEMATE = "stalemate"
@@ -33,6 +35,7 @@ let CHECKMATE = "checkmate"
 //format of each element : [piece,prev_pos,next_pos,taken_piece,(special)]
 let MOVES = [];
 
+//format of each element : [piece, next_col, next_row]
 let REDO_STACK = [];
 
 class Piece {
@@ -114,6 +117,7 @@ class Game {
         this.setKings();
     }
 
+    //sets the cell colors
     setColors() {
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
@@ -126,6 +130,7 @@ class Game {
         }
     }
 
+    //place both kings
     setKings() {
         this.king1 = new King(WHITE, translateToChars(4, 0));
         this.board[0][4].piece = this.king1;
@@ -133,6 +138,7 @@ class Game {
         this.board[7][4].piece = this.king2;
     }
 
+    //places pieces of both sides
     setPieces() {
         this.board[0][0].piece = new Rook(WHITE, translateToChars(0, 0));
         this.board[0][7].piece = new Rook(WHITE, translateToChars(7, 0));
@@ -153,6 +159,7 @@ class Game {
         this.board[7][3].piece = new Queen(BLACK, translateToChars(3, 7));
     }
 
+    //places pawns of both sides
     setPawns() {
         for (let i = 0; i < 8; i++) {
             this.board[1][i].piece = new Pawn(WHITE, translateToChars(i, 1));
@@ -160,9 +167,16 @@ class Game {
         }
     }
 
+    //renders the board stored in this.board
     renderBoard() {
         let board = document.getElementById("board");
         board.innerHTML = "";
+
+        // We set different start and end points for both loops 
+        // to render the board with either black or white on top/bottom
+        // Currently only needed if board rotate option is selected
+
+        // Black on top
         let start = 8;
         let end = 1;
         let incr = -1;
@@ -176,6 +190,7 @@ class Game {
             return s <= e;
         };
         if ((TURN_BOARD && TURN == BLACK) || PLAYER == BLACK) {
+            // White on top
             start = 1;
             end = 8;
             incr = 1;
@@ -196,6 +211,7 @@ class Game {
 
                 let cell_color = this.board[i - 1][j - 1].cell_color;
 
+                // Set background image if exists, else just use color
                 if (cell_color == WHITE) {
                     if (WHITE_CELL_IMAGE) {
                         button.style.backgroundImage = WHITE_CELL_IMAGE;
@@ -212,13 +228,15 @@ class Game {
                 }
 
                 button.classList += " m-0 p-0 button ";
-                button.disabled = true;
+                button.disabled = true; //Everything disabled by default, enabled using enableMovables()
                 button.innerHTML = "";
                 board.appendChild(button);
             }
         }
     }
 
+    //Sets the color for the actual rendered board using the colors in 
+    //this.board[][] set by setColors()
     resetColors() {
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
@@ -243,6 +261,7 @@ class Game {
         }
     }
 
+    //render the pieces using this.board[][]... self explanatory
     renderPieces() {
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
@@ -253,6 +272,8 @@ class Game {
                     img.src =
                         `./themes/${THEME}/${curr.piece.color}/${curr.piece.img}.png`;
                     img.classList += " piece ";
+                    // Rotate the black pieces if rotate black pieces option is checked
+                    // rotate both if rotate pieces option is checked and it's black's turn
                     if((TURN_BLACK_PIECES && curr.piece.color == BLACK)|| (TURN_PIECES && TURN == BLACK)){
                         img.classList += " rotated "
                     }
@@ -262,11 +283,14 @@ class Game {
         }
     }
 
+    // enable current player's pieces
     enableMovables() {
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 let curr = this.board[i][j].piece;
                 let button = document.getElementById(translateToChars(j, i));
+
+                //Remove '|| true' if you you want to keep two separate players (ie online multiplayer)
                 if (curr && curr.color == TURN && (PLAYER == TURN || true)) {
                     button.disabled = false;
                     button.onclick = () => {
@@ -279,11 +303,18 @@ class Game {
         }
     }
 
+
+    //highlight the moves a player can take with the selected piece
     showMoves(col, row) {
+
+        //resets colors to remove the highlight from previous calls.
+        //we need to re render the pieces to disable any other moves 
+        //that may have been enabled by a previous call
         this.resetColors();
         this.renderPieces();
         this.enableMovables();
         this.calculateSight();
+
         let piece = this.board[row][col].piece;
         let moves = this.getPossibleMoves(piece, col, row);
 
@@ -292,19 +323,24 @@ class Game {
             let movecell = document.getElementById(
                 translateToChars(mcol, mrow),
             );
+
             if (this.board[mrow][mcol].piece == null) {
-                movecell.style.background = MOVABLE_COLOR;
+                movecell.style.background = MOVABLE_COLOR; //if cell empty
             } else if (this.board[mrow][mcol].piece.color != piece.color) {
-                movecell.style.background = KILL_COLOR;
+                movecell.style.background = KILL_COLOR; //if cell has enemy
             }
+
             movecell.disabled = false;
             movecell.onclick = () => {
+                //We empty the redo stack if a move is made by the user
+                //for obvious reasons... this "disables" the redo button
                 REDO_STACK = [];
                 this.makeMove(piece, mcol, mrow);
             };
         }
     }
 
+    //Check if the move puts the piece's king in danger
     moveChecksSelf(move, piece) {
         let checks_self = false;
         let king = this.getKing(piece.color);
@@ -314,10 +350,12 @@ class Game {
 
         let prev = this.board[prev_row][prev_col].piece;
         let next = this.board[next_row][next_col].piece;
+
+        // make the move internally and check which cells are in_danger
         this.board[next_row][next_col].piece = prev;
         this.board[prev_row][prev_col].piece = null;
-
         this.calculateDanger();
+
         if (this.board[king_row][king_col].in_danger == true) {
             checks_self = true;
         }
@@ -325,6 +363,7 @@ class Game {
             checks_self = true;
         }
 
+        //put things back to normal and reset the "in_danger" status
         this.board[next_row][next_col].piece = next;
         this.board[prev_row][prev_col].piece = prev;
         this.calculateDanger();
@@ -332,20 +371,27 @@ class Game {
         return checks_self;
     }
 
+    //return the king of the given color
     getKing(color) {
         if (this.king1.color == color) return this.king1;
         return this.king2;
     }
 
+    //return all squares visible to the piece (possible or not)
     getPieceMoves(piece) {
         let moves = [];
         let [col, row] = translateToNums(piece.position);
+
+        //PAWN MOVES
         if (piece instanceof Pawn) {
             let front = (piece.color == WHITE) ? row + 1 : row - 1;
-            if (
-                piece.color == WHITE && row == 1 ||
-                piece.color == BLACK && row == 6
-            ) {
+            if(front > 7 || front < 0){
+                console.log("You done goofed!")
+                return moves
+            }
+
+            // Add the square two steps ahead if pawn hasn't moved and way is clear
+            if (piece.color == WHITE && row == 1 || piece.color == BLACK && row == 6) {
                 let doublefront = (piece.color == WHITE) ? row + 2 : row - 2;
                 if (
                     this.board[front][col].piece == null &&
@@ -354,14 +400,17 @@ class Game {
                     moves.push([col, doublefront]);
                 }
             }
+
             let diagonal1 = this.board[front][col - 1]?.piece;
             let diagonal2 = this.board[front][col + 1]?.piece;
 
+            //ENPASSANT !!!!!
             if (
                 piece.color == WHITE && row == 4 ||
                 piece.color == BLACK && row == 3
             ) {
                 let last_move = MOVES[MOVES.length - 1];
+                //Check if last move allows enpassant
                 if (last_move[0] instanceof Pawn) {
                     let [old_col, old_row] = translateToNums(last_move[1]);
                     if (old_col == col + 1 || old_col == col - 1) {
@@ -372,115 +421,92 @@ class Game {
                     }
                 }
             }
+
+            //move front if not blocked
             if (this.board[front][col].piece == null) {
                 moves.push([col, front]);
             }
+            //diagonals if enemy
             if (diagonal1 && diagonal1.color != piece.color) {
                 moves.push([col - 1, front]);
             }
             if (diagonal2 && diagonal2.color != piece.color) {
                 moves.push([col + 1, front]);
             }
-        } else if (piece instanceof Knight) {
-            for (let i = -2; i <= 2; i++) {
-                for (let j = -2; j <= 2; j++) {
-                    if (Math.abs(i) == Math.abs(j) || i == 0 || j == 0) {
-                        continue;
-                    }
-                    moves.push([col + i, row + j]);
-                }
+        }
+
+
+        //KNIGHT MOVES
+        if (piece instanceof Knight) {
+            let knightMoves = [
+                [-2, -1], [-2, 1],
+                [-1, -2], [-1, 2],
+                [1, -2], [1, 2],
+                [2, -1], [2, 1]
+            ];
+            for (let [dx, dy] of knightMoves) {
+                let c = col + dx;
+                let r = row + dy;
+                if (r > 7 || r < 0 || c > 7 || c < 0) continue;
+                moves.push([c, r]);
             }
-        } else if (piece instanceof Bishop) {
-            let h = [1, 1, -1, -1, 1];
-            for (let j = 0, k = 1; j < 4, k < 5; j++, k++) {
+        }
+
+        //BISHOP AND QUEEN MOVES, Queen Diagonals
+        if (piece instanceof Bishop || piece instanceof Queen) {
+            let directions = [
+                [-1, -1], [-1, 1],  // Up-left, Up-right
+                [1, -1], [1, 1]     // Down-left, Down-right
+            ];
+            for (let [dx, dy] of directions) {
                 for (let i = 1; i <= 7; i++) {
-                    let c = col + i * h[j];
-                    let r = row + i * h[k];
-                    if (r > 7 || r < 0 || c > 7 || c < 0) {
-                        continue;
-                    }
+                    let c = col + i * dx;
+                    let r = row + i * dy;
+                    if (r > 7 || r < 0 || c > 7 || c < 0) break;
                     let curr_cell = this.board[r][c];
                     if (!curr_cell.piece) {
                         moves.push([c, r]);
-                    } else if (curr_cell.piece.color != piece.color) {
-                        moves.push([c, r]);
-                        break;
-                    } else if (curr_cell.piece.color == piece.color) {
+                    } else{
+                        if (curr_cell.piece.color != piece.color) moves.push([c, r]);
                         break;
                     }
                 }
             }
-        } else if (piece instanceof Rook) {
-            let h = [0, 1, 0, -1, 0];
-            for (let j = 0, k = 1; j < 4, k < 5; j++, k++) {
+        }
+
+        //ROOK AND QUEEN MOVES, Queen straights
+        if (piece instanceof Rook || piece instanceof Queen) {
+            let directions = [
+                [-1, 0], [1, 0],  // Vertical (Up, Down)
+                [0, -1], [0, 1]   // Horizontal (Left, Right)
+            ];
+            for (let [dx, dy] of directions) {
                 for (let i = 1; i <= 7; i++) {
-                    let c = col + i * h[j];
-                    let r = row + i * h[k];
-                    if (r > 7 || r < 0 || c > 7 || c < 0) {
-                        continue;
-                    }
+                    let c = col + i * dx;
+                    let r = row + i * dy;
+                    if (r > 7 || r < 0 || c > 7 || c < 0) break;
 
                     let curr_cell = this.board[r][c];
                     if (!curr_cell.piece) {
                         moves.push([c, r]);
-                    } else if (curr_cell.piece.color != piece.color) {
-                        moves.push([c, r]);
-                        break;
-                    } else if (curr_cell.piece.color == piece.color) {
+                    } else {
+                        if (curr_cell.piece.color != piece.color) moves.push([c, r]);
                         break;
                     }
                 }
             }
-        } else if (piece instanceof Queen) {
-            let h = [1, 1, -1, -1, 1];
-            for (let j = 0, k = 1; j < 4, k < 5; j++, k++) {
-                for (let i = 1; i <= 7; i++) {
-                    let c = col + i * h[j];
-                    let r = row + i * h[k];
-                    if (r > 7 || r < 0 || c > 7 || c < 0) {
-                        continue;
-                    }
-                    let curr_cell = this.board[r][c];
-                    if (!curr_cell.piece) {
-                        moves.push([c, r]);
-                    } else if (curr_cell.piece.color != piece.color) {
-                        moves.push([c, r]);
-                        break;
-                    } else if (curr_cell.piece.color == piece.color) {
-                        break;
-                    }
-                }
-            }
+        }
 
-            h = [0, 1, 0, -1, 0];
-            for (let j = 0, k = 1; j < 4, k < 5; j++, k++) {
-                for (let i = 1; i <= 7; i++) {
-                    let c = col + i * h[j];
-                    let r = row + i * h[k];
-                    if (r > 7 || r < 0 || c > 7 || c < 0) {
-                        continue;
-                    }
-                    let curr_cell = this.board[r][c];
-                    if (!curr_cell.piece) {
-                        moves.push([c, r]);
-                    } else if (curr_cell.piece.color != piece.color) {
-                        moves.push([c, r]);
-                        break;
-                    } else if (curr_cell.piece.color == piece.color) {
-                        break;
-                    }
-                }
-            }
-        } else if (piece instanceof King) {
-            for (let i = -1; i < 2; i++) {
-                for (let j = -1; j < 2; j++) {
+        //KING MOVES
+        if (piece instanceof King) {
+            //8 surrounding squares
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
                     if (i == 0 && j == 0) continue;
                     let c = col + i;
                     let r = row + j;
 
-                    if (r > 7 || r < 0 || c > 7 || c < 0) {
-                        continue;
-                    }
+                    if (r > 7 || r < 0 || c > 7 || c < 0) continue;
 
                     let curr_cell = this.board[r][c];
                     if (!curr_cell.piece) {
@@ -490,23 +516,25 @@ class Game {
                     }
                 }
             }
+
+            //castling logic
             if (!piece.has_moved && !this.board[row][col].in_danger) {
-                let col1 = col - 4;
-                let col2 = col + 3;
-                let rook1 = this.board[row][col1].piece;
-                let rook2 = this.board[row][col2].piece;
                 let this_row = this.board[row];
+
+                //long castle
+                let queenside_rook = this.board[row][0].piece;
                 if (
-                    rook1 && !rook1.has_moved &&
-                    !this_row[col - 1].piece && !this_row[col - 2].piece &&
-                    !this_row[col - 3].piece &&
-                    !this_row[col - 1].in_sight &&
-                    !this_row[col - 2].in_sight && !this_row[col - 3].in_sight
+                    queenside_rook && !queenside_rook.has_moved &&
+                    !this_row[col - 1].piece && !this_row[col - 2].piece && !this_row[col - 3].piece &&
+                    !this_row[col - 1].in_sight && !this_row[col - 2].in_sight // King cannot pass through check
                 ) {
                     moves.push([col - 2, row]);
                 }
+
+                //short castle 
+                let kingside_rook = this.board[row][7].piece;
                 if (
-                    rook2 && !rook2.has_moved &&
+                    kingside_rook && !kingside_rook.has_moved &&
                     !this_row[col + 1].piece && !this_row[col + 2].piece &&
                     !this_row[col + 1].in_sight && !this_row[col + 2].in_sight
                 ) {
@@ -517,34 +545,40 @@ class Game {
         return moves;
     }
 
+    // return possible moves, i.e the ones that don't put the king in danger and are inside the board
     getPossibleMoves(piece) {
         let moves = this.getPieceMoves(piece);
         let possible_moves = [];
         for (let move of moves) {
             let [mcol, mrow] = move;
             if (mcol > 7 || mcol < 0 || mrow > 7 || mrow < 0) continue;
+            if (this.board[mrow][mcol].piece?.color == piece.color) continue;
             if (this.moveChecksSelf(move, piece)) continue;
-            if (
-                this.board[mrow][mcol].piece &&
-                this.board[mrow][mcol].piece.color == piece.color
-            ) continue;
             possible_moves.push(move);
         }
         return possible_moves;
     }
 
+
+    //Moves a piece, and does a bunch of other stuff, does too much imo
+    //TODO: Clean this up, could probably extract some more, maybe use a standard object for move
     makeMove(piece, next_col, next_row, forward = true) {
         let [prev_col, prev_row] = translateToNums(piece.position);
         let next_pos = translateToChars(next_col, next_row);
         let prev_pos = piece.position;
-        piece.position = next_pos;
+
         let special = null;
         let old_piece = piece
 
+        piece.position = next_pos;
+
         let prev = this.board[prev_row][prev_col];
         let next = this.board[next_row][next_col];
+
         let taken_piece = next.piece;
 
+        //Checks if the move is Enpassant but only if it is done going forward ie NOT undo
+        //TODO definitely need a move object
         if (forward && this.isEnpassant(piece, next_row, next_col, prev_col)) {
             console.log("ENPASSANT");
             special = "enpassant";
@@ -552,6 +586,7 @@ class Game {
             this.board[next_row + x][next_col].piece = null;
         }
 
+        // checks if the pawn is being promoted
         if (forward && this.isPromotion(piece, next_row)) {
             console.log("PROMOTION");
             let selected = false;
@@ -589,11 +624,12 @@ class Game {
             special = "promotion";
         }
 
+        //The actual moving
         piece.has_moved = true;
-
         this.board[next_row][next_col].piece = piece;
         this.board[prev_row][prev_col].piece = null;
 
+        // Castling logic
         if (this.isCastle(piece, next_col, prev_col)) {
             console.log("CASTLE");
             let rook = null;
@@ -610,9 +646,12 @@ class Game {
             }
         }
 
+        //recheck danger status for all cells
         this.calculateDanger();
+
+        //check for checkmate/stalemate and display appropriate modals
+        //TODO refactor
         let mate = this.checkForMate();
-        
         if (mate == CHECKMATE) {
             let html_modal = document.getElementById("endModal")
             document.getElementById("modal_heading").innerHTML = "Checkmate!"
@@ -623,7 +662,6 @@ class Game {
             console.log("CHECKMATE");
             console.log(TURN, "WINS!");
         }
-
         if (mate == STALEMATE) {
             let html_modal = document.getElementById("endModal")
             document.getElementById("modal_heading").innerHTML = "Stalemate"
@@ -635,6 +673,7 @@ class Game {
             console.log("BOTH OF YOU SUCK!");
         }
 
+        //record move and change turns if forward
         let curr_move = [piece, prev_pos, next_pos, taken_piece, special];
         if(special == "promotion") curr_move.push(old_piece)
 
@@ -653,6 +692,7 @@ class Game {
         this.enableMovables();
     }
 
+    //Checks if the move is a castle, should be gone after cleanup
     isCastle(piece, new_col, prev_col) {
         if (piece instanceof King && Math.abs(new_col - prev_col) == 2) {
             return true;
@@ -682,12 +722,18 @@ class Game {
         return false;
     }
 
+    //Checks for checkmate and stalemate
     checkForMate() {
         let other = otherColor(TURN);
+
+        // If piece count is 2: stalemate
         let piece_count = 0
         let enough_material = false
         let in_check = false
         let movable = false
+
+        let white_weak_pieces = 0
+        let black_weak_pieces = 0
 
         let enemy_king = this.getKing(other)
         let [king_col,king_row] = translateToNums(enemy_king.position)
@@ -698,7 +744,12 @@ class Game {
                 let piece = this.board[i][j].piece;
                 if (!piece) continue;
                 piece_count++
-                if(piece instanceof(Rook) || piece instanceof(Queen)) enough_material = true
+                if(!enough_material && (piece instanceof Rook || piece instanceof Queen)) enough_material = true
+                if(!enough_material && (piece instanceof Bishop || piece instanceof Knight)){
+                    if(piece.color == WHITE) white_weak_pieces += 1
+                    if(piece.color == BLACK) black_weak_pieces += 1
+                    if(white_weak_pieces >= 2 || black_weak_pieces >= 2) enough_material = true
+                }
                 if (piece.color == other) {
                     if (this.getPossibleMoves(piece).length > 0) {
                         movable = true;
@@ -707,29 +758,41 @@ class Game {
             }
         }
 
-        if(piece_count <= 3 && !enough_material) return STALEMATE
-        if(in_check && !movable) return CHECKMATE
-        if(!in_check && !movable) return STALEMATE
+        if(movable){
+            if(piece_count <= 4 && !enough_material) 
+                return STALEMATE
+        }else{
+            if(in_check) return CHECKMATE
+            return STALEMATE
+        }
+
         return false
     }
 
+    //calculate the pieces that are under threat
     calculateDanger() {
+        //reset all to false
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 this.board[i][j].in_danger = false;
             }
         }
 
+        //Iterate over every piece and check its moves, set the danger of its target to true
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 let curr = this.board[i][j];
                 let piece = curr.piece;
                 if (!piece) continue;
+
                 let moves = this.getPieceMoves(piece);
                 for (let move of moves) {
                     let [mcol, mrow] = move;
                     if (mcol > 7 || mcol < 0 || mrow > 7 || mrow < 0) continue;
+
                     let target = this.board[mrow][mcol];
+                    if(target.in_danger) continue // Skip cell if already marked in danger
+
                     if (target.piece && target.piece.color != piece.color) {
                         target.in_danger = true;
                     }
@@ -738,6 +801,8 @@ class Game {
         }
     }
 
+    // calculate which squares are in enemy sight
+    // currently used only for castling, but could be helpful in the future
     calculateSight() {
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
@@ -762,16 +827,21 @@ class Game {
         }
     }
 
+    //redo a move, nothing here
     redoMove() {
         let move = REDO_STACK.pop();
         if (!move) return;
         this.makeMove(move[0], move[1], move[2]);
     }
 
+    //this nightmare attemps to undo a move and restore the state to what it was
+    //the lack of a standard move object has made it a nightmare
+    //TODO standardize moves accross click, undo and redo
     undoMove() {
         let move = MOVES.pop();
         if (!move) return;
 
+        //move : [piece moved, from, to, taken piece, <special>, <original pawn from promotion>]
         let piece = move[0];
         let [prev_col, prev_row] = translateToNums(move[1]);
         let [next_col, next_row] = translateToNums(move[2]);
@@ -783,6 +853,8 @@ class Game {
 
         let behind = (piece.color == WHITE) ? -1 : 1;
 
+        //Normal move, just move the piece back without recording it in MOVES stack
+        //then replace the taken piece if there is one
         if (!move[4]) {
             this.makeMove(piece, prev_col, prev_row, false);
             new_cell.piece = taken_piece;
@@ -790,6 +862,9 @@ class Game {
             REDO_STACK.push([piece, next_col, next_row]);
             return;
         }
+
+        // ENPASSANT!!! put pawn back in prev position, place a pawn in enemy area
+        // TODO make more efficient
         if (move[4] == "enpassant") {
             let pawn = new Pawn(
                 otherColor(piece.color),
@@ -804,6 +879,7 @@ class Game {
             return;
         }
 
+        // put original pawn and taken pieces back in their original place, 
         if (move[4] == "promotion") {
             let pawn = move[5]
             new_cell.piece = pawn;
@@ -816,6 +892,8 @@ class Game {
         }
 
         REDO_STACK.push([piece, next_col, next_row]);
+
+        //castled towards H/A: just return pieces back to origin and set has_moved to false
         if (move[4] == "castle_H") {
             let king = this.getKing(piece.color);
             king.position = translateToChars(4, prev_row);
@@ -884,8 +962,15 @@ function setTheme() {
         .then((data) => {
             LIGHT_COLOR = data["light_color"] ?? "white";
             DARK_COLOR = data["dark_color"] ?? "grey";
-            WHITE_CELL_IMAGE = data["white_cell_image"] ?? null;
-            BLACK_CELL_IMAGE = data["black_cell_image"] ?? null;
+
+            white_cell_image = data["white_cell_image"] ?? null;
+            black_cell_image = data["black_cell_image"] ?? null;
+
+            if(white_cell_image)
+                WHITE_CELL_IMAGE = `themes/${THEME}/${white_cell_image}`
+            if(black_cell_image)
+                BLACK_CELL_IMAGE = `themes/${THEME}/${black_cell_image}`
+
             LOGO_COLOR = data["logo_color"] ?? "black";
 
             BACKGROUND_COLOR = data["background_color"] ?? "white";
@@ -907,7 +992,7 @@ function setTheme() {
             } else {
                 document.body.style.background = BACKGROUND_COLOR;
             }
-            
+
             let mate_modal = document.getElementById("modal_content")
             mate_modal.style.background = LIGHT_COLOR ?? "white"
 
@@ -932,6 +1017,8 @@ function load() {
     TURN = WHITE;
     game = new Game();
 
+    // themes.json contains the list of themes with their name and icon,
+    // the name must be the same name as the folder, icon can be anything
     document.getElementById("theme").innerHTML = "";
     fetch("themes/themes.json")
         .then((response) => response.json())
@@ -942,11 +1029,10 @@ function load() {
                 option.value = theme.name;
                 option.innerHTML = theme.icon;
                 document.getElementById("theme").appendChild(option);
-            });
+            })
         }).then(() => {
                 document.getElementById(`theme-${THEME}`).selected = true
-        })
-        .catch((error) => console.error("Error loading themes:", error));
+        }).catch((error) => console.error("Error loading themes:", error));
 
     if (!localStorage.getItem("THEME")) {
         localStorage.setItem("THEME", "default");
@@ -974,6 +1060,8 @@ function load() {
         setTheme();
     };
 
+    // the turn board, turn pieces, and turn black pieces options are mutually exclusive
+    // and also need to be uncheck-able
     for(let radio of document.getElementsByClassName('rotation')){
         radio.addEventListener('click', function () {
             if (this.checked) {
