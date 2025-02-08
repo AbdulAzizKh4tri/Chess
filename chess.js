@@ -100,7 +100,7 @@ class King extends Piece {
 
 class Cell {
     constructor() {
-        this.color = null;
+        this.cell_color = null;
         this.piece = null;
         this.in_sight = false;
     }
@@ -904,15 +904,22 @@ class Game {
         let taken = move.taken_piece
         let home_row = getHomeRow(move.piece.color)
 
-        if(!move.special || move.special == ENPASSANT){
+        if(!move.special){
+            piece.position = prev
             this.getCellAt(prev).piece = piece
-            move.piece.position = prev
-            this.getCellAt(taken?.position ?? next).piece = taken
+            this.getCellAt(next).piece = taken
+        }
+
+        else if(move.special == ENPASSANT){
+            piece.position = prev
+            this.getCellAt(prev).piece = piece
+            this.getCellAt(next).piece = null
+            this.getCellAt(taken.position).piece = taken
         }
 
         else if(move.special == PROMOTION){
             this.getCellAt(prev).piece = new Pawn(piece.color, prev)
-            this.getCellAt(taken.position).piece = taken
+            this.getCellAt(next).piece = taken
         }
 
         else if(move.special == SHORTCASTLE){
