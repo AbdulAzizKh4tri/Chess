@@ -157,7 +157,7 @@ class GameBoard{
         }
     }
 
-   promotePawn(move){
+    async promotePawn(move){
         let modal = document.getElementById("promotionModalContent")
         if(move.piece.color == BLACK && TURN_BLACK_PIECES)
             modal.classList.add("rotated")
@@ -196,17 +196,25 @@ class GameBoard{
         kimg.classList.add("piece")
         bimg.classList.add("piece")
 
-        qbtn.onclick = ()=>{
-            this.game.makeMove(move,"Q")
+        qbtn.onclick = async ()=>{
+            move.promoted_to = "Q"
+            await this.game.makeMove(move)
+            this.reRenderBoard()
         }
-        rbtn.onclick = ()=>{
-            this.game.makeMove(move,"R")
+        rbtn.onclick = async ()=>{
+            move.promoted_to = "R"
+            await this.game.makeMove(move)
+            this.reRenderBoard()
         }
-        kbtn.onclick = ()=>{
-            this.game.makeMove(move,"N")
+        kbtn.onclick = async ()=>{
+            move.promoted_to = "N"
+            await this.game.makeMove(move)
+            this.reRenderBoard()
         }
-        bbtn.onclick = ()=>{
-            this.game.makeMove(move,"B")
+        bbtn.onclick = async ()=>{
+            move.promoted_to = "B"
+            await this.game.makeMove(move)
+            this.reRenderBoard()
         }
 
         qbtn.appendChild(qimg)
@@ -246,14 +254,22 @@ class GameBoard{
                     this.game.REDO_STACK = [];
                     this.game.makeMove(move);
                     this.reRenderBoard()
+                    let [mate,winner] = this.game.getMateStatus()
+                    if(mate){
+                        this.showMateModal(mate,winner)
+                    }
                 };
             }else{
-                movecell.onclick = () => {
+                movecell.onclick = async () => {
                     //We empty the redo stack if a move is made by the user
                     //for obvious reasons... this.game."disables" the redo button
                     this.game.REDO_STACK = [];
-                    this.promotePawn(move)
+                    await this.promotePawn(move)
                     this.reRenderBoard()
+                    let [mate,winner] = this.game.getMateStatus()
+                    if(mate){
+                        this.showMateModal(mate,winner)
+                    }
                 };
             }
         }
@@ -322,6 +338,26 @@ class GameBoard{
         this.renderPieces();
         this.enableMovables();
     }
+
+    showMateModal(mate,winner){
+        let html_modal = document.getElementById("endModal")
+        if (mate == CHECKMATE) {
+            document.getElementById("modal_heading").innerHTML = "Checkmate!"
+            document.getElementById("modal_winner").innerHTML = `${(winner).toUpperCase()} WINS!`
+            document.getElementById("modal_image").src = CHECKMATE_IMAGE
+            console.log("CHECKMATE");
+            console.log(winner, "WINS!");
+        }
+        if (mate == STALEMATE) {
+            document.getElementById("modal_heading").innerHTML = "Stalemate"
+            document.getElementById("modal_winner").innerHTML = `Draw`
+            document.getElementById("modal_image").src = STALEMATE_IMAGE
+            console.log("STALEMATE");
+            console.log("BOTH OF YOU SUCK!");
+        }
+        let modal = new bootstrap.Modal(html_modal);
+        modal.show();
+    }
 }
 
 let game = null;
@@ -338,7 +374,7 @@ const STALEMATE = "stalemate"
 const CHECKMATE = "checkmate"
 const PROMOTION = "promotion"
 
-function load() {
+async function load() {
     game = new Game();
     game_board = new GameBoard(game);
 
@@ -385,7 +421,7 @@ function load() {
 
     document.getElementById("theme").onchange = () => {
         localStorage.setItem("THEME", document.getElementById("theme").value);
-        setTheme();
+        game_board.setTheme();
     };
 
     // the turn board, turn pieces, and turn black pieces options are mutually exclusive
@@ -407,7 +443,7 @@ function load() {
             TURN_BOARD = document.getElementById("turn_board").checked
             TURN_PIECES = document.getElementById("turn_pieces").checked
             TURN_BLACK_PIECES = document.getElementById("turn_black").checked
-            game.renderPieces()
+            game_board.renderPieces()
 
         })
     }

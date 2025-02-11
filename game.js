@@ -17,6 +17,14 @@ class Piece {
         this.has_moved = false;
         this.in_danger = false;
     }
+
+    equals(other_piece){
+        return ( 
+            this.color == other_piece.color && 
+            this.position == other_piece.position &&
+            this.symbol == other_piece.symbol
+        )
+    }
 }
 
 class Pawn extends Piece {
@@ -84,6 +92,7 @@ class Move{
         this.next_pos = next_pos
         this.taken_piece = null
         this.special = special
+        this.promoted_to = null
     }
 
     getPrevColRow(){
@@ -101,7 +110,7 @@ class Move{
 
     equals(other_move){
         return(
-            this.piece == other_move.piece &&
+            this.piece.equals(other_move.piece) &&
             this.prev_pos == other_move.prev_pos &&
             this.next_pos == other_move.next_pos &&
             this.taken_piece == other_move.taken_piece &&
@@ -124,6 +133,7 @@ export class Game {
         this.REDO_STACK = [];
         this.MOVES = [];
         this.TURN = WHITE;
+        this.mate = null
     }
 
     getCellAt(pos){
@@ -511,15 +521,16 @@ export class Game {
                 }
             }
         }
+        console.log(user_move)
         return false
     }
 
     //Moves a piece, and does a bunch of other stuff, does too much imo
-    makeMove(move, promoted_to=null) {
+    async makeMove(move) {
         let prev_cell = this.getCellAt(move.prev_pos);
         let next_cell = this.getCellAt(move.next_pos);
 
-        if(!this.isPossibleMove(move))
+        if(!this.isPossibleMove(move) || this.mate)
             throw "Illegal Move!"
 
         //Checks if the move is Enpassant, kill enemy pawn
@@ -573,7 +584,7 @@ export class Game {
 
         // Swap the piece with the one specified by the user
         if (move.special == PROMOTION) {
-            switch(promoted_to){
+            switch(move.promoted_to){
                 case "Q":
                     move.piece = new Queen(move.piece.color, move.prev_pos)
                     break
@@ -589,6 +600,7 @@ export class Game {
                 default:
                     throw "Inavlid move!"
             }
+            console.log(move)
         }
 
         //The actual moving part
@@ -603,11 +615,10 @@ export class Game {
         this.calculateDanger();
 
         //check for checkmate/stalemate and display appropriate modals
-        let mate = this.checkForMate();
-        if(mate) showMateModal(mate);
+        this.mate = this.checkForMate();
 
-        //record move and change turns if forward
         this.MOVES.push(move);
+
         this.TURN = otherColor(move.piece.color);
 
         if(this.MOVES.length == 0) this.TURN = WHITE
@@ -660,11 +671,15 @@ export class Game {
         return null
     }
 
+    getMateStatus(){
+        return [this.mate, otherColor(this.TURN)]
+    }
+
     //redo a move
-    redoMove() {
+    async redoMove() {
         let move = this.REDO_STACK.pop();
         if (!move) return;
-        this.makeMove(move);
+        await this.makeMove(move);
     }
 
     //undo a move 
@@ -672,6 +687,7 @@ export class Game {
         let move = this.MOVES.pop()
         if(!move) return
         this.REDO_STACK.push(move)
+        this.mate = null
 
         let prev = move.prev_pos
         let next = move.next_pos
@@ -693,8 +709,12 @@ export class Game {
         }
 
         else if(move.special == PROMOTION){
-            this.getCellAt(prev).piece = new Pawn(piece.color, prev)
+            const pawn = new Pawn(piece.color, prev)
+            this.getCellAt(prev).piece = pawn
             this.getCellAt(next).piece = taken
+            this.REDO_STACK.pop()
+            move.piece = pawn
+            this.REDO_STACK.push(move)
         }
 
         else if(move.special == SHORTCASTLE){
