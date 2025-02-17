@@ -12,6 +12,7 @@ let WHITE_CELL_IMAGE = null;
 let BLACK_CELL_IMAGE = null;
 let MOVABLE_COLOR = "lightgreen";
 let KILL_COLOR = "#F00";
+let CHECK_COLOR = "#F00"
 let CHECKMATE_IMAGE = null
 let STALEMATE_IMAGE = null
 
@@ -44,6 +45,16 @@ class GameBoard{
                     }
                 }
             }
+        }
+
+        const white_king = this.game.getKing(WHITE)
+        const black_king = this.game.getKing(BLACK)
+
+        if (white_king.in_danger){
+            document.getElementById(white_king.position).style.background = CHECK_COLOR
+        }
+        if (black_king.in_danger){
+            document.getElementById(black_king.position).style.background = CHECK_COLOR
         }
     }
 
@@ -299,6 +310,7 @@ class GameBoard{
 
                 MOVABLE_COLOR = data["movable_color"] ?? "lightgreen"
                 KILL_COLOR = data["kill_color"] ?? "#F00"
+                CHECK_COLOR = data["check_color"] ?? "#F00"
 
                 let checkmate_image = data["checkmate_image"] ?? null
                 let stalemate_image = data["stalemate_image"] ?? null
