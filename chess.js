@@ -357,6 +357,7 @@ class GameBoard{
             document.getElementById("modal_heading").innerHTML = "Checkmate!"
             document.getElementById("modal_winner").innerHTML = `${(winner).toUpperCase()} WINS!`
             document.getElementById("modal_image").src = CHECKMATE_IMAGE
+            document.getElementById("modal_image").alt = "Checkmate"
             console.log("CHECKMATE");
             console.log(winner, "WINS!");
         }
@@ -364,6 +365,7 @@ class GameBoard{
             document.getElementById("modal_heading").innerHTML = "Stalemate"
             document.getElementById("modal_winner").innerHTML = `Draw`
             document.getElementById("modal_image").src = STALEMATE_IMAGE
+            document.getElementById("modal_image").alt = "Stalemate"
             console.log("STALEMATE");
             console.log("BOTH OF YOU SUCK!");
         }
