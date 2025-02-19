@@ -66,4 +66,12 @@ theme.json allows for the following customizations:
 - `checkmate_image`: Default is `null`
 - `stalemate_image`: Default is `null`
 
-It would be greatly appreciated if you decide to make your own theme and share it, you will be credited 
+It would be greatly appreciated if you decide to make your own theme and share it, you will be credited.
+
+## Icon/Image Credits:
+**FlatIcon:**
+- Rizal2109 - *default theme piece icons* 
+- Good Ware - *desert theme piece icons*
+- Smashicons - *default Checkmate image*
+- pixel perfect - *default Stalemate image*
+- allsom, handicon, lutfix - *other icons*
